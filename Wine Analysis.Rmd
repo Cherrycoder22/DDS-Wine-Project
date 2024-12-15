@@ -1,0 +1,67 @@
+---
+title: "Wine Analysis"
+output: html_document
+date: "2024-12-15"
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(e1071)  # For naiveBayes
+library(caret)
+wine_test <-read.csv("/Users/cherokeecarr/Desktop/Wine Test Set.csv")
+print(wine_test)
+wine_train <- read.csv("/Users/cherokeecarr/Desktop/Wine Train.csv")
+print(wine_train)
+
+Vino$quality <- as.factor(Vino$quality)
+
+quality_9_wines <- subset(wine_train, quality == 9)
+
+# Check the first few rows of the filtered dataset
+head(quality_9_wines)
+
+quality_8_wines <- subset(wine_train, quality == 8)
+print(quality_8_wines)
+
+```
+
+## R Markdown
+
+First, I read the data and decided to see what factors influence the higher quality wines.
+
+
+
+
+```{r}
+library(caret)       # For confusionMatrix
+library(e1071)       # For Naive Bayes
+
+# Load the datasets
+wine_test <- read.csv("/Users/cherokeecarr/Desktop/Wine Test Set.csv")
+wine_train <- read.csv("/Users/cherokeecarr/Desktop/Wine Train.csv")
+
+
+# Check if columns in wine_train and wine_test match, handle missing columns in wine_test
+missing_columns <- setdiff(colnames(wine_train), colnames(wine_test))
+wine_test[missing_columns] <- NA
+colnames(wine_test) <- colnames(wine_train)
+
+# Combine wine_train and wine_test for further processing
+Vino <- rbind(wine_train, wine_test)
+
+# Remove rows with NA values (cleaning the combined dataset)
+Vino_clean <- na.omit(Vino)
+
+# Train the Naive Bayes model
+nb_model <- naiveBayes(quality ~ density + pH + chlorides + fixed.acidity + volatile.acidity +
+                        residual.sugar + citric.acid + sulphates + alcohol, data = Vino_clean)
+
+# Print the Naive Bayes model summary
+print(nb_model)
+
+predictions <- predict(nb_model, newdata = wine_test)
+print(predictions)
+
+```
+
+
