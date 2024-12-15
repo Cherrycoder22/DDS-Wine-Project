@@ -1,0 +1,102 @@
+---
+title: "Wine"
+output: html_document
+date: "2024-12-15"
+runtime: shiny
+---
+
+```{r setup, include=FALSE}
+library(shiny)
+library(bslib)
+library(dplyr)
+library(ggplot2)
+ui <- fluidPage(
+  titlePanel("Quality v. Factors"),
+  
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("factor", "Choose Factor for Line Plot", 
+                  choices = c("Sugar", "Acidity", "pH", "Chlorides", "Alcohol", "Density"),
+                  selected = "Sugar"),
+      
+      sliderInput(inputId = "Quality", 
+                  label = "Filter by Quality", 
+                  min = 1, 
+                  max = 9, 
+                  value = c(1, 9), 
+                  step = 1)
+    ),
+    
+    mainPanel(
+      plotOutput("linePlot"),
+      plotOutput("scatterPlot"),
+      tableOutput("Wine_table"),
+      textOutput("debugQuality")  # Debugging output
+    )
+  )
+)
+
+```
+
+
+
+```{r eruptions, echo=FALSE}
+library(shiny)
+library(bslib)
+library(dplyr)
+library(ggplot2)
+library(readr) 
+server <- function(input, output) {
+
+  # Read CSV from GitHub
+  file_url <- "https://raw.githubusercontent.com/Cherrycoder22/DDS-Wine-Project/refs/heads/main/Wine%20Train.csv"
+  Wine <- read_csv(file_url)
+  
+  # Debugging: Show column names and first few rows
+  output$debugQuality <- renderPrint({
+    print(input$Quality)  # Show selected Quality range
+    print(head(Wine$Quality))  # Show the first few rows of Quality column
+  })
+  
+  # Ensure 'Quality' is numeric
+  Wine$Quality <- as.numeric(Wine$Quality)
+  
+  # Render the first few rows of the Wine dataset
+  output$Wine_table <- renderTable({
+    head(Wine)
+  })
+  
+  # Reactive data filtering based on Quality input
+  filtered_data <- reactive({
+    data <- Wine
+    
+    # Filter by Quality range
+    data <- data %>%
+      filter(Quality >= input$Quality[1] & Quality <= input$Quality[2])
+    
+    return(data)
+  })
+  
+  # Render line plot based on the selected factor
+  output$linePlot <- renderPlot({
+    data <- filtered_data()
+    
+    ggplot(data, aes_string(x = "Quality", y = input$factor)) +
+      geom_line() +
+      geom_point() +
+      labs(title = paste("Line Plot of", input$factor, "vs Quality"),
+           x = "Quality",
+           y = input$factor)
+  })
+  
+  # Render scatter plot (example with 'Sugar')
+  output$scatterPlot <- renderPlot({
+    data <- filtered_data()
+    
+    ggplot(data, aes(x = Quality, y = Sugar)) +
+      geom_point() +
+      labs(title = "Scatter Plot of Quality vs Sugar", x = "Quality", y = "Sugar")
+  })
+}
+shinyApp(ui = ui, server = server)
+```
